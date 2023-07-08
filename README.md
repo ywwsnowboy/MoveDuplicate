@@ -1,4 +1,4 @@
-# MoveDuplicate
+# RemoveDuplicate
 **问题**：由于 Citespace 去重是根据 DOI 进行去重，并不能够有效去除所有重复率。由于 Web of Science 数据库和 Scopus 数据库检索数据导出的数据存在差异，通过 Citespace 转换 Scopus 数据库的数据保存为`txt`数据，需要将缩略词`DE`改为`ID`，然后通过 Citespace 进行去重，然而两个数据库中仍然存在大量数据重复，比如标题大小写或者某个数据库 DOI 信息缺失等等，因此此脚本通过==标题==进行检索去重。
 
 **前提条件**：首先需要通过 Citespace 将文献数据分割成年份的形式，也就是 Citespace 去重处理后的效果，如下所示：
