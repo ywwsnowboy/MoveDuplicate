@@ -61,7 +61,7 @@ class MoveDuplicate:
                     with open(new_text_path, "w", encoding='utf-8') as w_file:
                         w_file.write(no_duplicate_joint_contents)
 
-                    print(f"{file} in ./old/ folder have been updated and was saved in {self.new_file_path}.")
+                    print(f"{file} in ./old/ folder had been updated and was saved in {self.new_file_path}.")
             print("原始每个文件中的文献数据量:")
             output1 = " ".join(list(map(str, len_have_duplicate_dataset)))
             print(output1)
