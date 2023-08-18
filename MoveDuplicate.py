@@ -1,12 +1,13 @@
 import os
 import re
+import csv
 
 
 class MoveDuplicate:
 
-    def __init__(self, old_file_path, new_file_path):
-        self.old_file_path = old_file_path
-        self.new_file_path = new_file_path
+    def __init__(self, input_file_path, output_file_path):
+        self.input_file_path = input_file_path
+        self.output_file_path = output_file_path
         self.duplicate_paper_title = []  # 重复的文献标题全部用小写表示
         self.new_pt_er = []
 
@@ -46,7 +47,7 @@ class MoveDuplicate:
         return no_duplicate_contents, len_origin, len_no_duplicate
 
     def read_old_files_write_to_new_files(self):
-        for subdir, _, files in os.walk(self.old_file_path):
+        for subdir, _, files in os.walk(self.input_file_path):
             len_have_duplicate_dataset = []
             len_no_duplicate_dataset = []
             for file in files:
@@ -56,12 +57,12 @@ class MoveDuplicate:
                     len_have_duplicate_dataset.append(len_origin)
                     len_no_duplicate_dataset.append(len_no_duplicate)
 
-                    new_text_path = os.path.join(self.new_file_path, file)
+                    new_text_path = os.path.join(self.output_file_path, file)
                     # 写入内容到txt文件
                     with open(new_text_path, "w", encoding='utf-8') as w_file:
                         w_file.write(no_duplicate_joint_contents)
 
-                    print(f"{file} in ./old/ folder had been updated and was saved in {self.new_file_path}.")
+                    print(f"{file} in ./old/ folder had been updated and was saved in {self.output_file_path}.")
             print("原始每个文件中的文献数据量:")
             output1 = " ".join(list(map(str, len_have_duplicate_dataset)))
             print(output1)
@@ -69,3 +70,39 @@ class MoveDuplicate:
             output2 = " ".join(list(map(str, len_no_duplicate_dataset)))
             print(output2)
 
+
+class ExtractFieldTags:
+    def __init__(self, input_file_path, output_file_path):
+        self.input_file_path = input_file_path
+        self.output_file_path = output_file_path
+
+    def extract_field_tags_data_write_into_new_csv_files(self):
+        all_publication_name = []
+        for subdir, _, files in os.walk(self.input_file_path):
+            for file in files:
+                if file.endswith('.txt'):
+                    textpath = os.path.join(subdir, file)
+                    with open(textpath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        pattern_pt_er = r'PT J\n.*?\nER\n'  # 使用非贪婪匹配，提取每对 PT 和 ER 之间的内容
+                        split_all_paper_information = re.findall(pattern_pt_er, content, re.DOTALL)
+                        for single_paper_information in split_all_paper_information:
+                            pattern_publication_name = r'\nSO (.*?)\nLA '  # 使用非贪婪匹配，提取每个 SO 的内容
+                            matched_publication_name = re.findall(pattern_publication_name, single_paper_information,
+                                                                  re.DOTALL)
+                            all_publication_name.append(matched_publication_name)
+
+        # 拼接文件路径
+        output_file_path = os.path.join(self.output_file_path, 'output.csv')
+
+        # 打开CSV文件以写入模式
+        with open(output_file_path, 'w', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+
+            # 写入表头
+            writer.writerow(['Name'])
+
+            # 写入数据行
+            writer.writerows(all_publication_name)
+
+        print("数据已写入CSV文件。")
