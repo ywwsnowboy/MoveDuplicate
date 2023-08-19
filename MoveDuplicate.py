@@ -73,36 +73,85 @@ class MoveDuplicate:
 
 class ExtractFieldTags:
     def __init__(self, input_file_path, output_file_path):
+        self.all_publication_name = []
         self.input_file_path = input_file_path
         self.output_file_path = output_file_path
 
+    def split_single_field_tag(self, textpath):
+        with open(textpath, 'r', encoding='utf-8') as f:
+            content = f.read()
+            pattern_pt_er = r'PT J\n.*?\nER\n'  # 使用非贪婪匹配，提取每对 PT 和 ER 之间的内容
+            split_all_paper_information = re.findall(pattern_pt_er, content, re.DOTALL)
+            for single_paper_information in split_all_paper_information:
+                pattern_publication_name = r'\nSO (.*?)\nLA '  # 使用非贪婪匹配，提取每个 SO 的内容
+                matched_publication_name = re.findall(pattern_publication_name,
+                                                      single_paper_information,
+                                                      re.DOTALL)
+                self.all_publication_name.append(matched_publication_name)
+
     def extract_field_tags_data_write_into_new_csv_files(self):
-        all_publication_name = []
         for subdir, _, files in os.walk(self.input_file_path):
             for file in files:
                 if file.endswith('.txt'):
                     textpath = os.path.join(subdir, file)
-                    with open(textpath, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        pattern_pt_er = r'PT J\n.*?\nER\n'  # 使用非贪婪匹配，提取每对 PT 和 ER 之间的内容
-                        split_all_paper_information = re.findall(pattern_pt_er, content, re.DOTALL)
-                        for single_paper_information in split_all_paper_information:
-                            pattern_publication_name = r'\nSO (.*?)\nLA '  # 使用非贪婪匹配，提取每个 SO 的内容
-                            matched_publication_name = re.findall(pattern_publication_name, single_paper_information,
-                                                                  re.DOTALL)
-                            all_publication_name.append(matched_publication_name)
+                    self.split_single_field_tag(textpath)
+
+        ################################################################
+        # 统计期刊名称，这部分代码写法一
+        no_duplicate_publication_name = []
+        no_duplicate_publication_count = []
+        index_pub = 0
+        for publication_name in self.all_publication_name:
+            if index_pub == 0:
+                index_pub += 1
+                no_duplicate_publication_name.append(publication_name)
+                no_duplicate_publication_count.append(1)
+            else:
+                if publication_name in no_duplicate_publication_name:
+                    index_no_duplicate = no_duplicate_publication_name.index(publication_name)
+                    no_duplicate_publication_count[index_no_duplicate] += 1
+                else:
+                    no_duplicate_publication_name.append(publication_name)
+                    no_duplicate_publication_count.append(1)
 
         # 拼接文件路径
         output_file_path = os.path.join(self.output_file_path, 'output.csv')
+        # 指定要写入的文件名
 
-        # 打开CSV文件以写入模式
+        # 将两个列表合并为一个列表的列表，每个子列表代表一行
+        data = list(zip(no_duplicate_publication_name, no_duplicate_publication_count))
+
+        # 使用CSV模块写入CSV文件
         with open(output_file_path, 'w', newline='') as csv_file:
             writer = csv.writer(csv_file)
-
-            # 写入表头
-            writer.writerow(['Name'])
-
-            # 写入数据行
-            writer.writerows(all_publication_name)
+            writer.writerow(['Column A', 'Column B'])  # 写入标题行
+            writer.writerows(data)  # 写入数据行
 
         print("数据已写入CSV文件。")
+
+        # 上面的用分割线隔开的代码可以用下面的注释代码替换
+        ################################################################
+        # 统计期刊名称，这部分代码写法二，和上述代码一样，不过这里使用字典来进行字符计数
+        # all_publication_name_count = {}
+        # for string_name in all_publication_name:
+        #     if tuple(string_name) in all_publication_name_count:
+        #         all_publication_name_count[tuple(string_name)] += 1
+        #     else:
+        #         all_publication_name_count[tuple(string_name)] = 1
+        #
+        # # # 拼接文件路径
+        # output_file_path = os.path.join(self.output_file_path, 'output.csv')
+        #
+        # # 打开CSV文件以写入模式
+        # with open(output_file_path, 'w', newline='') as csv_file:
+        #     writer = csv.writer(csv_file)
+        #
+        #     # 写入表头
+        #     writer.writerow(['Name', 'times'])
+        #
+        #     # 写入数据行
+        #     for name, count in all_publication_name_count.items():
+        #         writer.writerow([name, count])
+        #
+        # print("数据已写入CSV文件。")
+        ################################################################
